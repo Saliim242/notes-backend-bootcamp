@@ -26,12 +26,12 @@ const notesSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    createdOn: {
-      type: Date,
-      default: Date.now(),
-    },
+    // createdOn: {
+    //   type: Date,
+    //   default: Date.now(),
+    // },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const Notes = mongoose.model("Notes", notesSchema);

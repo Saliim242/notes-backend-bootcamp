@@ -4,6 +4,7 @@ import dontenv from "dotenv";
 
 import router from "./routes/users.route.js";
 import notesRouter from "./routes/notes.route.js";
+import analyticsRouter from "./routes/analytics.route.js";
 import { connectionDB } from "./config/db.config.js";
 
 // Configrations
@@ -25,6 +26,9 @@ app.use(
 app.use("/api/v1/auth/users", router);
 // Notes route for user authentication
 app.use("/api/v1/notes", notesRouter);
+// Analytics route for user authentication
+
+app.use("/api/v1/analytics", analyticsRouter);
 
 // Server Starts Here
 const PORT = process.env.PORT || 7001;

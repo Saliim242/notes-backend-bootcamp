@@ -45,7 +45,7 @@ export const getSingleNote = async (req, res) => {
 // lets create a new note
 
 export const addNote = async (req, res) => {
-  const { title, content, tags } = req.body;
+  const { title, content, tags, isPinned } = req.body;
   const { user } = req.user;
   console.log(req.user);
   try {
@@ -60,6 +60,7 @@ export const addNote = async (req, res) => {
       content,
       tags: tags || [],
       userId: req.user._id,
+      isPinned: isPinned || false,
     });
 
     await note.save();
@@ -85,7 +86,8 @@ export const editNote = async (req, res) => {
       return res.status(404).json({ status: false, message: "Note not found" });
     }
 
-    if (note.userId.toString() !== req.user._id) {
+    if (note.userId.toString() !== req.user._id.toString()) {
+      // if (note.userId.toString() !== req.user._id) {
       console.log(note.userId, req.user._id);
       return res.status(403).json({
         status: false,
