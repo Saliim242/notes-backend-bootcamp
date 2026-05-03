@@ -30,6 +30,10 @@ app.use("/api/v1/notes", notesRouter);
 
 app.use("/api/v1/analytics", analyticsRouter);
 
+app.use("/", (req, res) => {
+  res.send("Welcome to Notes API");
+});
+
 // Server Starts Here
 const PORT = process.env.PORT || 7001;
 
