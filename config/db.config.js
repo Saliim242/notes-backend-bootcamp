@@ -5,9 +5,7 @@ import mongoose from "mongoose";
 export const connectionDB = async () => {
   try {
     // Connect to Db
-    const db = await mongoose.connect(
-      "mongodb+srv://salim7442:ABS25HK95@foodly.fa6pzoe.mongodb.net/notes",
-    );
+    const db = await mongoose.connect(process.env.MONG_URL);
 
     // lest display the connection success and the connection Name
     console.log(`Connected to MongoDB Successfylly ${db.connection.name}`);
