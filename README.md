@@ -1,4 +1,4 @@
-﻿# NoteKeeper API
+﻿# NoteKeeper API Project
 
 A professional backend API for a note-taking application built with **Node.js**, **Express**, and **MongoDB**. This project includes user authentication, protected note CRUD operations, search, and pinning support.
 
