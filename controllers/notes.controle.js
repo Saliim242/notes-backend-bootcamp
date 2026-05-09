@@ -1,4 +1,4 @@
-import { isValidObjectId } from "../utils/check_moongose_id.js";
+import mongoose from "mongoose";
 import { Notes } from "../modules/notes.model.js";
 
 export const getAllNotes = async (req, res) => {
@@ -6,12 +6,80 @@ export const getAllNotes = async (req, res) => {
     const notes = await Notes.find({ userId: req.user._id }).sort({
       isPinned: -1,
     });
-    res
-      .status(200)
-      .json({ status: true, message: "All notes are fetched", notes: notes });
+
+    const totalNotes = notes.length;
+    const pinnedCount = notes.filter((note) => note.isPinned).length;
+    const unpinnedCount = totalNotes - pinnedCount;
+
+    res.status(200).json({
+      status: true,
+      message: "All notes are fetched",
+      notes,
+      stats: {
+        totalNotes,
+        pinnedCount,
+        unpinnedCount,
+      },
+    });
   } catch (error) {
-    console.log("Getting all notes failed", error);
-    res.status(404).json({ status: false, message: error.message });
+    console.error("Getting all notes failed", error);
+    res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+export const getNoteStatistics = async (req, res) => {
+  try {
+    const userId = new mongoose.Types.ObjectId(req.user._id);
+
+    const totalNotes = await Notes.countDocuments({ userId });
+    const pinnedNotes = await Notes.countDocuments({ userId, isPinned: true });
+    const unpinnedNotes = totalNotes - pinnedNotes;
+
+    const notesPerTag = await Notes.aggregate([
+      { $match: { userId } },
+      { $unwind: { path: "$tags", preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: { $ifNull: ["$tags", "Untagged"] },
+          count: { $sum: 1 },
+        },
+      },
+      { $project: { _id: 0, tag: "$_id", count: 1 } },
+      { $sort: { count: -1 } },
+    ]);
+
+    const notesPerDay = await Notes.aggregate([
+      { $match: { userId } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const latestNote = await Notes.findOne({ userId })
+      .sort({ createdAt: -1 })
+      .select("title createdAt");
+
+    res.status(200).json({
+      status: true,
+      message: "Note statistics fetched successfully",
+      stats: {
+        totalNotes,
+        pinnedNotes,
+        unpinnedNotes,
+        notesPerTag,
+        notesPerDay,
+        latestNote,
+      },
+    });
+  } catch (error) {
+    console.error("Fetching note statistics failed", error);
+    res.status(500).json({ status: false, message: error.message });
   }
 };
 
@@ -46,8 +114,7 @@ export const getSingleNote = async (req, res) => {
 
 export const addNote = async (req, res) => {
   const { title, content, tags, isPinned } = req.body;
-  const { user } = req.user;
-  console.log(req.user);
+
   try {
     if (!title || !content) {
       return res
@@ -127,9 +194,6 @@ export const searchNote = async (req, res) => {
       });
     }
 
-    console.log(req.user.id);
-
-    // lets find the query maches
     const notes = await Notes.find({
       userId: req.user._id,
       $or: [
@@ -139,18 +203,10 @@ export const searchNote = async (req, res) => {
       ],
     });
 
-    // if (!notes) {
-    //   return res
-    //     .status(404)
-    //     .json({ status: false, message: "No  notes found" });
-    // }
-
-    console.log(notes);
-
     res.status(200).json({
       status: true,
       message: "Note search found successfully",
-      note: notes,
+      notes,
     });
   } catch (error) {
     // console.
@@ -203,20 +259,20 @@ export const deleteNote = async (req, res) => {
       return res.status(404).json({ status: false, message: "Note not found" });
     }
 
-    if (note.userId.toString() !== req.user._id) {
+    if (note.userId.toString() !== req.user._id.toString()) {
       console.log(note.userId, req.user._id);
       return res.status(403).json({
         status: false,
-        message: "User does not have permession to updated other users",
+        message: "User does not have permission to delete another user's note",
       });
     }
 
-    const deleteNote = await Notes.findByIdAndDelete(note);
+    const deletedNote = await Notes.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
       status: true,
-      message: "Note Deleted successfully",
-      note: deleteNote,
+      message: "Note deleted successfully",
+      note: deletedNote,
     });
   } catch (error) {
     // console.log(error

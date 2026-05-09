@@ -7,11 +7,13 @@ import {
   deleteNote,
   notePing,
   searchNote,
+  getNoteStatistics,
 } from "../controllers/notes.controle.js";
 import { validateToken } from "../middlewares/verifyUserToken.js";
 const router = express.Router();
 
 router.use(validateToken);
+router.get("/stats", getNoteStatistics);
 router.get("/search", searchNote);
 router.get("/", getAllNotes).get("/:id", getSingleNote);
 router.post("/", addNote).put("/:id", editNote).delete("/:id", deleteNote);
